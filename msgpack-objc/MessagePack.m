@@ -17,16 +17,18 @@
     msgpack_zone_init(&mempool, 2048);
     msgpack_object deserialized;
     msgpack_unpack(data.bytes, data.length, NULL, &mempool, &deserialized);
-    id object = [self objectFromMessagePackObject:deserialized];
+    id object = nil;
+    @autoreleasepool {
+        object = objcObjectFromMsgPackObject(deserialized);
+    }
     msgpack_zone_destroy(&mempool);
     return object;
 }
 
-+ (id)objectFromMessagePackObject:(msgpack_object)object
-{
+id objcObjectFromMsgPackObject(msgpack_object object) {
     switch(object.type) {
         case MSGPACK_OBJECT_NIL:
-            return [NSNull null];
+            return nil;
 
         case MSGPACK_OBJECT_BOOLEAN:
             return @(object.via.boolean);
@@ -59,7 +61,7 @@
 
             id objects[array_length];
             for (int i = 0; i < array_length; ++i) {
-                objects[i] = [self objectFromMessagePackObject:object.via.array.ptr[i]];
+                objects[i] = objcObjectFromMsgPackObject(object.via.array.ptr[i]);
             }
             return [[NSArray alloc] initWithObjects:objects count:array_length];
         }
@@ -75,8 +77,8 @@
             int array_index = 0;
             for (int i = 0; i < map_length; ++i) {
                 msgpack_object_kv *p = object.via.map.ptr + i;
-                id key = [self objectFromMessagePackObject:p->key];
-                id value = [self objectFromMessagePackObject:p->val];
+                id key = objcObjectFromMsgPackObject(p->key);
+                id value = objcObjectFromMsgPackObject(p->val);
                 if (key && value) {
                     keys[array_index] = key;
                     values[array_index] = value;
