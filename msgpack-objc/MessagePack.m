@@ -9,6 +9,12 @@
 #import "MessagePack.h"
 #import <msgpack.h>
 
+@interface MessagePackExtension()
+
+- (instancetype)initWithType:(uint8_t)type bytes:(const void *)bytes length:(NSUInteger)length;
+
+@end
+
 @implementation MessagePack
 
 + (id)unpackData:(NSData *)data
@@ -25,8 +31,9 @@
     return object;
 }
 
-id objcObjectFromMsgPackObject(msgpack_object object) {
-    switch(object.type) {
+id objcObjectFromMsgPackObject(msgpack_object object)
+{
+    switch (object.type) {
         case MSGPACK_OBJECT_NIL:
             return nil;
 
@@ -50,8 +57,7 @@ id objcObjectFromMsgPackObject(msgpack_object object) {
             return [[NSData alloc] initWithBytes:object.via.bin.ptr length:object.via.bin.size];
 
         case MSGPACK_OBJECT_EXT:
-#warning handle extension type, send ID?
-            return [[NSData alloc] initWithBytes:object.via.ext.ptr length:object.via.ext.size];
+            return [[MessagePackExtension alloc] initWithType:object.via.ext.type bytes:object.via.ext.ptr length:object.via.ext.size];
 
         case MSGPACK_OBJECT_ARRAY: {
             int array_length = object.via.array.size;
@@ -92,6 +98,39 @@ id objcObjectFromMsgPackObject(msgpack_object object) {
             NSLog(@"Warning: Ecountered unexpected type when unpacking msgpack-object");
             return nil;
     }
+}
+
+@end
+
+@implementation MessagePackExtension
+
+- (instancetype)initWithType:(uint8_t)type data:(NSData *)data
+{
+    if (self = [super init]) {
+        _type = type;
+        _data = data;
+    }
+    return self;
+}
+
+- (instancetype)initWithType:(uint8_t)type bytes:(const void *)bytes length:(NSUInteger)length
+{
+    return [self initWithType:type data:[NSData dataWithBytes:bytes length:length]];
+}
+
+- (BOOL)isEqual:(id)object
+{
+    if (object == self) {
+        return YES;
+    }
+    return [object isKindOfClass:self.class] &&
+    [(MessagePackExtension *)object type] == self.type &&
+    [self.data isEqual:[(MessagePackExtension *)object data]];
+}
+
+- (NSUInteger)hash
+{
+    return self.data.hash ^ self.type;
 }
 
 @end
