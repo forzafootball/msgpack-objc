@@ -31,6 +31,97 @@
     return object;
 }
 
++ (NSData *)packObject:(id)object
+{
+    msgpack_sbuffer buffer;
+    msgpack_packer packer;
+    msgpack_sbuffer_init(&buffer);
+    msgpack_packer_init(&packer, &buffer, msgpack_sbuffer_write);
+    packObjcObject(object, &packer);
+    NSData *data = [NSData dataWithBytes:buffer.data length:buffer.size];
+    msgpack_sbuffer_destroy(&buffer);
+    return data;
+}
+
+void packObjcObject(id object, msgpack_packer *packer) {
+    if ([object isKindOfClass:[NSArray class]]) {
+        msgpack_pack_array(packer, [(NSArray *)object count]);
+        for (id child in object) {
+            packObjcObject(child, packer);
+        }
+    } else if ([object isKindOfClass:[NSDictionary class]]) {
+        msgpack_pack_map(packer, [(NSDictionary *)object count]);
+        [object enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+            packObjcObject(key, packer);
+            packObjcObject(obj, packer);
+        }];
+    } else if ([object isKindOfClass:[NSString class]]) {
+        const char *UTF8String = [(NSString *)object UTF8String];
+        unsigned long length = strlen(UTF8String);
+        msgpack_pack_str(packer, length);
+        msgpack_pack_str_body(packer, UTF8String, length);
+    } else if ([object isKindOfClass:[NSNumber class]]) {
+        packNSNumber(object, packer);
+    } else if ([object isKindOfClass:[MessagePackExtension class]]) {
+        MessagePackExtension *extension = (MessagePackExtension *)object;
+        msgpack_pack_ext(packer, extension.data.length, extension.type);
+        msgpack_pack_ext_body(packer, extension.data.bytes, extension.data.length);
+    } else {
+        NSLog(@"msgpack-objc: Skipping object of unkown type: %@", object);
+    }
+}
+
+void packNSNumber(NSNumber *number, msgpack_packer *packer) {
+    // Booleans are singletons, so we can check for those explicitly
+    if (number == (id)kCFBooleanTrue) {
+        msgpack_pack_true(packer);
+        return;
+    } else if (number == (id)kCFBooleanFalse) {
+        msgpack_pack_false(packer);
+        return;
+    }
+
+#define pack_primitive(TYPE) {TYPE value; [number getValue:&value]; msgpack_pack_##TYPE(packer, value); break;}
+#define pack_primitive_t(TYPE) {TYPE##_t value; [number getValue:&value]; msgpack_pack_##TYPE(packer, value); break;}
+    CFNumberType numberType = CFNumberGetType((CFNumberRef)number);
+    switch (numberType) {
+        case kCFNumberSInt8Type:
+            pack_primitive_t(int8);
+        case kCFNumberSInt16Type:
+            pack_primitive_t(int16);
+        case kCFNumberSInt32Type:
+            pack_primitive_t(int32);
+        case kCFNumberSInt64Type:
+            pack_primitive_t(int64);
+        case kCFNumberFloatType:
+        case kCFNumberFloat32Type:
+            pack_primitive(float);
+        case kCFNumberCGFloatType:
+        case kCFNumberDoubleType:
+        case kCFNumberFloat64Type:
+            pack_primitive(double);
+        case kCFNumberCharType:
+            pack_primitive(char);
+        case kCFNumberShortType:
+            pack_primitive(short);
+        case kCFNumberIntType:
+            pack_primitive(int);
+        case kCFNumberLongType:
+        case kCFNumberNSIntegerType:
+            pack_primitive(long);
+        case kCFNumberLongLongType: {
+            long long value; [number getValue:&value];
+            msgpack_pack_long_long(packer, value);
+            break;
+        }
+        default:
+            NSLog(@"msgpack-objc: Skipping NSNumber of unknown type: %@", number);
+            break;
+    }
+#undef pack_primitive
+#undef pack_primitive_t
+}
+
 id objcObjectFromMsgPackObject(msgpack_object object)
 {
     switch (object.type) {

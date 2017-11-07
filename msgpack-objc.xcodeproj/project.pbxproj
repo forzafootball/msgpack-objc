@@ -11,7 +11,7 @@
 		5D9B3AD61FA780F2009FC29A /* MessagePack.h in Headers */ = {isa = PBXBuildFile; fileRef = 5D9B3AD51FA780F2009FC29A /* MessagePack.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5DC13D231FA8870200D93126 /* MessagePack.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DC13D221FA8870200D93126 /* MessagePack.m */; };
 		5DC13DA91FA88D4900D93126 /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DC13D881FA88CF700D93126 /* libmsgpackc.a */; };
-		5DE76E071FB0987200C60CDF /* Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DE76E061FB0987200C60CDF /* Tests.m */; };
+		5DE76E071FB0987200C60CDF /* MessagePackTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DE76E061FB0987200C60CDF /* MessagePackTests.m */; };
 		5DE76E241FB0999B00C60CDF /* testdata.msgpack in Resources */ = {isa = PBXBuildFile; fileRef = 5DE76E221FB0999A00C60CDF /* testdata.msgpack */; };
 		5DE76E251FB0999B00C60CDF /* testdata.json in Resources */ = {isa = PBXBuildFile; fileRef = 5DE76E231FB0999B00C60CDF /* testdata.json */; };
 		5DE76E2E1FB09AAB00C60CDF /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DE76E2D1FB09AAB00C60CDF /* AppDelegate.m */; };
@@ -172,7 +172,7 @@
 		5DC13D221FA8870200D93126 /* MessagePack.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MessagePack.m; sourceTree = "<group>"; };
 		5DC13D6E1FA88CF600D93126 /* msgpack.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = msgpack.xcodeproj; path = "msgpack-c-xcode/msgpack.xcodeproj"; sourceTree = "<group>"; };
 		5DE76E041FB0987200C60CDF /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5DE76E061FB0987200C60CDF /* Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests.m; sourceTree = "<group>"; };
+		5DE76E061FB0987200C60CDF /* MessagePackTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MessagePackTests.m; sourceTree = "<group>"; };
 		5DE76E081FB0987200C60CDF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5DE76E221FB0999A00C60CDF /* testdata.msgpack */ = {isa = PBXFileReference; lastKnownFileType = file; path = testdata.msgpack; sourceTree = "<group>"; };
 		5DE76E231FB0999B00C60CDF /* testdata.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = testdata.json; sourceTree = "<group>"; };
@@ -278,7 +278,7 @@
 		5DE76E051FB0987200C60CDF /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				5DE76E061FB0987200C60CDF /* Tests.m */,
+				5DE76E061FB0987200C60CDF /* MessagePackTests.m */,
 				5DE76E081FB0987200C60CDF /* Info.plist */,
 				5DE76E231FB0999B00C60CDF /* testdata.json */,
 				5DE76E221FB0999A00C60CDF /* testdata.msgpack */,
@@ -578,7 +578,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5DE76E071FB0987200C60CDF /* Tests.m in Sources */,
+				5DE76E071FB0987200C60CDF /* MessagePackTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

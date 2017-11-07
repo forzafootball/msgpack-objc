@@ -11,6 +11,7 @@
 @interface MessagePack : NSObject
 
 + (id)unpackData:(NSData *)data;
++ (NSData *)packObject:(id)object;
 
 @end
 
