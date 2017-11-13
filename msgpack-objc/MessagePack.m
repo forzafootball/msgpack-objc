@@ -62,6 +62,10 @@ void packObjcObject(id object, msgpack_packer *packer) {
         msgpack_pack_str_body(packer, UTF8String, length);
     } else if ([object isKindOfClass:[NSNumber class]]) {
         packNSNumber(object, packer);
+    } else if ([object isKindOfClass:[NSData class]]) {
+        NSData *data = (NSData *)object;
+        msgpack_pack_bin(packer, data.length);
+        msgpack_pack_bin_body(packer, data.bytes, data.length);
     } else if ([object isKindOfClass:[MessagePackExtension class]]) {
         MessagePackExtension *extension = (MessagePackExtension *)object;
         msgpack_pack_ext(packer, extension.data.length, extension.type);
@@ -222,6 +226,11 @@ id objcObjectFromMsgPackObject(msgpack_object object)
 - (NSUInteger)hash
 {
     return self.data.hash ^ self.type;
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<%@> (type: %i, length: %lu)", NSStringFromClass(self.class), self.type, self.data.length];
 }
 
 @end
