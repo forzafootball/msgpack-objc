@@ -66,6 +66,8 @@ void packObjcObject(id object, msgpack_packer *packer) {
         NSData *data = (NSData *)object;
         msgpack_pack_bin(packer, data.length);
         msgpack_pack_bin_body(packer, data.bytes, data.length);
+    } else if ([object isKindOfClass:[NSDate class]]) {
+        packNSDate(object, packer);
     } else if ([object isKindOfClass:[MessagePackExtension class]]) {
         MessagePackExtension *extension = (MessagePackExtension *)object;
         msgpack_pack_ext(packer, extension.data.length, extension.type);
@@ -126,6 +128,35 @@ void packNSNumber(NSNumber *number, msgpack_packer *packer) {
 #undef pack_primitive_t
 }
 
+void packNSDate(NSDate *date, msgpack_packer *packer)
+{
+    NSTimeInterval timeInterval = [date timeIntervalSince1970];
+    struct timespec time = {.tv_sec = (long)timeInterval};
+    time.tv_nsec = (timeInterval - (double)time.tv_sec) * 1000000000.0;
+    if ((time.tv_sec >> 34) == 0) {
+        uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
+        if ((data64 & 0xffffffff00000000L) == 0) {
+            // timestamp 32
+            uint32_t data32 = (uint32_t)data64;
+            msgpack_pack_ext(packer, sizeof(data32), -1);
+            msgpack_pack_ext_body(packer, &data32, sizeof(data32));
+        }
+        else {
+            // timestamp 64
+            msgpack_pack_ext(packer, sizeof(data64), -1);
+            msgpack_pack_ext_body(packer, &data64, sizeof(data64));
+        }
+    }
+    else {
+        // timestamp 96
+        msgpack_pack_ext(packer, 12, -1);
+        uint32_t nsec = (uint32_t)time.tv_nsec;
+        int64_t sec = (int64_t)time.tv_sec;
+        msgpack_pack_ext_body(packer, &nsec, sizeof(nsec));
+        msgpack_pack_ext_body(packer, &sec, sizeof(sec));
+    }
+}
+
 id objcObjectFromMsgPackObject(msgpack_object object)
 {
     switch (object.type) {
@@ -151,8 +182,13 @@ id objcObjectFromMsgPackObject(msgpack_object object)
         case MSGPACK_OBJECT_BIN:
             return [[NSData alloc] initWithBytes:object.via.bin.ptr length:object.via.bin.size];
 
-        case MSGPACK_OBJECT_EXT:
+        case MSGPACK_OBJECT_EXT: {
+            // -1 is reserved for date objects, so we want to return an NSDate directly
+            if (object.via.ext.type == -1) {
+                return dateForDateExtension(object);
+            }
             return [[MessagePackExtension alloc] initWithType:object.via.ext.type bytes:object.via.ext.ptr length:object.via.ext.size];
+        }
 
         case MSGPACK_OBJECT_ARRAY: {
             int array_length = object.via.array.size;
@@ -193,6 +229,37 @@ id objcObjectFromMsgPackObject(msgpack_object object)
             NSLog(@"Warning: Ecountered unexpected type when unpacking msgpack-object");
             return nil;
     }
+}
+
+NSDate *dateForDateExtension(msgpack_object object)
+{
+    struct timespec result;
+    switch (object.via.ext.size) {
+        case sizeof(uint32_t): {
+            uint32_t data32 = *object.via.ext.ptr;
+            result.tv_nsec = 0;
+            result.tv_sec = data32;
+            break;
+        }
+        case sizeof(uint64_t): {
+            uint64_t data64 = *(uint64_t *)object.via.ext.ptr;
+            result.tv_nsec = data64 >> 34;
+            result.tv_sec = data64 & 0x00000003ffffffffL;
+            break;
+        }
+        case 12: {
+            uint32_t data32 = *(uint32_t *)object.via.ext.ptr;
+            int64_t data64 = *(int64_t *)(object.via.ext.ptr + sizeof(uint32_t));
+            result.tv_nsec = data32;
+            result.tv_sec = data64;
+            break;
+        }
+        default:
+            NSLog(@"Warning: Encountered unsupported Date format in message pack data. Size is %u bytes but supported sizes are 32, 64 or 96 bits.", object.via.ext.size);
+    }
+
+    NSTimeInterval interval = result.tv_sec + (result.tv_nsec / 1000000000.0);
+    return [NSDate dateWithTimeIntervalSince1970:interval];
 }
 
 @end

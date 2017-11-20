@@ -16,7 +16,7 @@
 @implementation MessagePackTests
 
 - (void)testJSONUnpackPerformance {
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"testdata" ofType:@"json" inDirectory:nil];
+    NSString *path = [[NSBundle bundleForClass:self.class] pathForResource:@"testdata" ofType:@"json" inDirectory:nil];
     NSData *JSONData = [NSData dataWithContentsOfFile:path];
     [self measureBlock:^{
         [NSJSONSerialization JSONObjectWithData:JSONData options:0 error:nil];
@@ -24,7 +24,7 @@
 }
 
 - (void)testMessagePackUnpackPerformance {
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"testdata" ofType:@"msgpack" inDirectory:nil];
+    NSString *path = [[NSBundle bundleForClass:self.class] pathForResource:@"testdata" ofType:@"msgpack" inDirectory:nil];
     NSData *messagePackData = [NSData dataWithContentsOfFile:path];
     [self measureBlock:^{
         [MessagePack unpackData:messagePackData];
@@ -69,6 +69,24 @@
     MessagePackExtension *unpacked = [MessagePack unpackData:packed];
     XCTAssertEqualObjects(extension, unpacked);
     XCTAssertEqualObjects(testString, [[NSString alloc] initWithData:unpacked.data encoding:NSUnicodeStringEncoding]);
+}
+
+- (void)testDatePacking {
+    NSDate *date32 = [NSDate dateWithTimeIntervalSince1970:10];
+    NSDate *date64 = [NSDate dateWithTimeIntervalSince1970:15.12345];
+    NSDate *date96 = [NSDate dateWithTimeIntervalSince1970:2147483647999.12345789];
+    NSDate *currentDate = [NSDate new];
+
+    NSArray *dates = @[date32, date64, date96, currentDate];
+    NSData *packed = [MessagePack packObject:dates];
+    NSArray *unpacked = [MessagePack unpackData:packed];
+    XCTAssertEqualObjects(unpacked[0], date32);
+    XCTAssertEqualObjects(unpacked[1], date64);
+    XCTAssertEqualObjects(unpacked[2], date96);
+
+    // We must check the time interval since 1970 on the current date, since that's what is serialized to MessagePack.
+    // Comparing with timeIntervalSinceReferenceDate can be false, and that seems to be what isEqual: does for NSDate
+    XCTAssertEqual([unpacked[3] timeIntervalSince1970], [currentDate timeIntervalSince1970]);
 }
 
 @end
