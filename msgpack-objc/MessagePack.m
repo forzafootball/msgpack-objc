@@ -8,6 +8,7 @@
 
 #import "MessagePack.h"
 #import <msgpack.h>
+#define ONE_BILLION 1000000000.0
 
 @interface MessagePackExtension()
 
@@ -131,8 +132,8 @@ void packNSNumber(NSNumber *number, msgpack_packer *packer) {
 void packNSDate(NSDate *date, msgpack_packer *packer)
 {
     NSTimeInterval timeInterval = [date timeIntervalSince1970];
-    struct timespec time = {.tv_sec = (long)timeInterval};
-    time.tv_nsec = (timeInterval - (double)time.tv_sec) * 1000000000.0;
+    struct timespec time = {.tv_sec = (long)floor(timeInterval)};
+    time.tv_nsec = (timeInterval - (double)time.tv_sec) * ONE_BILLION;
     if ((time.tv_sec >> 34) == 0) {
         uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
         if ((data64 & 0xffffffff00000000L) == 0) {
@@ -258,7 +259,7 @@ NSDate *dateForDateExtension(msgpack_object object)
             NSLog(@"Warning: Encountered unsupported Date format in message pack data. Size is %u bytes but supported sizes are 32, 64 or 96 bits.", object.via.ext.size);
     }
 
-    NSTimeInterval interval = result.tv_sec + (result.tv_nsec / 1000000000.0);
+    NSTimeInterval interval = result.tv_sec + (result.tv_nsec / ONE_BILLION);
     return [NSDate dateWithTimeIntervalSince1970:interval];
 }
 
