@@ -13,6 +13,15 @@
 		5D80D8341FC32B2700FDA4AF /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D82C1FC32B1700FDA4AF /* version.c */; };
 		5D80D8351FC32B2700FDA4AF /* vrefbuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D82B1FC32B1700FDA4AF /* vrefbuffer.c */; };
 		5D80D8361FC32B2700FDA4AF /* zone.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D8281FC32B1700FDA4AF /* zone.c */; };
+		5D8A63E82006569800F48447 /* MessagePack.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DC13D221FA8870200D93126 /* MessagePack.m */; };
+		5D8A63F7200657C600F48447 /* zone.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D8281FC32B1700FDA4AF /* zone.c */; };
+		5D8A63F8200657C600F48447 /* objectc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D8291FC32B1700FDA4AF /* objectc.c */; };
+		5D8A63F9200657C600F48447 /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D82C1FC32B1700FDA4AF /* version.c */; };
+		5D8A63FA200657C600F48447 /* vrefbuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D82B1FC32B1700FDA4AF /* vrefbuffer.c */; };
+		5D8A63FB200657C600F48447 /* unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 5D80D82A1FC32B1700FDA4AF /* unpack.c */; };
+		5D8A6404200657E200F48447 /* libmsgpack-c watchOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D8A6401200657C600F48447 /* libmsgpack-c watchOS.a */; };
+		5D8A640720065CE500F48447 /* MessagePack.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5D9B3AD51FA780F2009FC29A /* MessagePack.h */; };
+		5D8A640820065D1300F48447 /* MessagePack.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5D9B3AD51FA780F2009FC29A /* MessagePack.h */; };
 		5DEA75E71FC2EBE300EA2B36 /* MessagePackTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DE76E061FB0987200C60CDF /* MessagePackTests.m */; };
 		5DEA75E81FC2EBE900EA2B36 /* testdata.json in Resources */ = {isa = PBXBuildFile; fileRef = 5DE76E231FB0999B00C60CDF /* testdata.json */; };
 		5DEA75E91FC2EBED00EA2B36 /* testdata.msgpack in Resources */ = {isa = PBXBuildFile; fileRef = 5DE76E221FB0999A00C60CDF /* testdata.msgpack */; };
@@ -28,6 +37,13 @@
 			remoteGlobalIDString = 5D80D8161FC32A4200FDA4AF;
 			remoteInfo = "msgpack-c";
 		};
+		5D8A6402200657D900F48447 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5D9B3ACA1FA780F2009FC29A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5D8A63F5200657C600F48447;
+			remoteInfo = "msgpack-c watchOS";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +56,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5D8A63FD200657C600F48447 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5D8A640520065CB500F48447 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+				5D8A640820065D1300F48447 /* MessagePack.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5D8A640620065CDD00F48447 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+				5D8A640720065CE500F48447 /* MessagePack.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +94,8 @@
 		5D80D82A1FC32B1700FDA4AF /* unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = unpack.c; path = "msgpack-c/src/unpack.c"; sourceTree = "<group>"; };
 		5D80D82B1FC32B1700FDA4AF /* vrefbuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vrefbuffer.c; path = "msgpack-c/src/vrefbuffer.c"; sourceTree = "<group>"; };
 		5D80D82C1FC32B1700FDA4AF /* version.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = version.c; path = "msgpack-c/src/version.c"; sourceTree = "<group>"; };
+		5D8A63EE2006569800F48447 /* libMessagePack.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMessagePack.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		5D8A6401200657C600F48447 /* libmsgpack-c watchOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libmsgpack-c watchOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5D9B3AD51FA780F2009FC29A /* MessagePack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessagePack.h; sourceTree = "<group>"; };
 		5DC13D221FA8870200D93126 /* MessagePack.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MessagePack.m; sourceTree = "<group>"; };
 		5DE76E061FB0987200C60CDF /* MessagePackTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MessagePackTests.m; sourceTree = "<group>"; };
@@ -61,6 +108,21 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		5D80D8141FC32A4200FDA4AF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5D8A63E92006569800F48447 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D8A6404200657E200F48447 /* libmsgpack-c watchOS.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5D8A63FC200657C600F48447 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,6 +184,8 @@
 				5DEA75DC1FC2EB9500EA2B36 /* Tests.xctest */,
 				5DEA75EF1FC2EEAE00EA2B36 /* libMessagePack.a */,
 				5D80D8171FC32A4200FDA4AF /* libmsgpack-c.a */,
+				5D8A63EE2006569800F48447 /* libMessagePack.a */,
+				5D8A6401200657C600F48447 /* libmsgpack-c watchOS.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -166,6 +230,41 @@
 			productReference = 5D80D8171FC32A4200FDA4AF /* libmsgpack-c.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		5D8A63E42006569800F48447 /* MessagePack watchOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D8A63EB2006569800F48447 /* Build configuration list for PBXNativeTarget "MessagePack watchOS" */;
+			buildPhases = (
+				5D8A63E72006569800F48447 /* Sources */,
+				5D8A63E92006569800F48447 /* Frameworks */,
+				5D8A640520065CB500F48447 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5D8A6403200657D900F48447 /* PBXTargetDependency */,
+			);
+			name = "MessagePack watchOS";
+			productName = MessagePack;
+			productReference = 5D8A63EE2006569800F48447 /* libMessagePack.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		5D8A63F5200657C600F48447 /* msgpack-c watchOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D8A63FE200657C600F48447 /* Build configuration list for PBXNativeTarget "msgpack-c watchOS" */;
+			buildPhases = (
+				5D8A63F6200657C600F48447 /* Sources */,
+				5D8A63FC200657C600F48447 /* Frameworks */,
+				5D8A63FD200657C600F48447 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "msgpack-c watchOS";
+			productName = "msgpack-c";
+			productReference = 5D8A6401200657C600F48447 /* libmsgpack-c watchOS.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 		5DEA75DB1FC2EB9500EA2B36 /* Tests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5DEA75E41FC2EB9600EA2B36 /* Build configuration list for PBXNativeTarget "Tests" */;
@@ -189,6 +288,7 @@
 			buildPhases = (
 				5DEA75EB1FC2EEAE00EA2B36 /* Sources */,
 				5DEA75EC1FC2EEAE00EA2B36 /* Frameworks */,
+				5D8A640620065CDD00F48447 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -211,6 +311,12 @@
 				TargetAttributes = {
 					5D80D8161FC32A4200FDA4AF = {
 						CreatedOnToolsVersion = 9.1;
+						ProvisioningStyle = Automatic;
+					};
+					5D8A63E42006569800F48447 = {
+						ProvisioningStyle = Automatic;
+					};
+					5D8A63F5200657C600F48447 = {
 						ProvisioningStyle = Automatic;
 					};
 					5DEA75DB1FC2EB9500EA2B36 = {
@@ -239,6 +345,8 @@
 				5DEA75EE1FC2EEAE00EA2B36 /* MessagePack */,
 				5D80D8161FC32A4200FDA4AF /* msgpack-c */,
 				5DEA75DB1FC2EB9500EA2B36 /* Tests */,
+				5D8A63E42006569800F48447 /* MessagePack watchOS */,
+				5D8A63F5200657C600F48447 /* msgpack-c watchOS */,
 			);
 		};
 /* End PBXProject section */
@@ -268,6 +376,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5D8A63E72006569800F48447 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D8A63E82006569800F48447 /* MessagePack.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5D8A63F6200657C600F48447 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D8A63F7200657C600F48447 /* zone.c in Sources */,
+				5D8A63F8200657C600F48447 /* objectc.c in Sources */,
+				5D8A63F9200657C600F48447 /* version.c in Sources */,
+				5D8A63FA200657C600F48447 /* vrefbuffer.c in Sources */,
+				5D8A63FB200657C600F48447 /* unpack.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5DEA75D81FC2EB9500EA2B36 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -292,6 +420,11 @@
 			target = 5D80D8161FC32A4200FDA4AF /* msgpack-c */;
 			targetProxy = 5D80D8251FC32A6C00FDA4AF /* PBXContainerItemProxy */;
 		};
+		5D8A6403200657D900F48447 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5D8A63F5200657C600F48447 /* msgpack-c watchOS */;
+			targetProxy = 5D8A6402200657D900F48447 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -302,7 +435,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = NXRRDMLHBY;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/msgpack-c/include";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -317,12 +450,86 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = NXRRDMLHBY;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/msgpack-c/include";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		5D8A63EC2006569800F48447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NXRRDMLHBY;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = MessagePack;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SRCROOT)/msgpack-c/include/";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WATCHOS_DEPLOYMENT_TARGET = 3.0;
+			};
+			name = Debug;
+		};
+		5D8A63ED2006569800F48447 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NXRRDMLHBY;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = MessagePack;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SRCROOT)/msgpack-c/include/";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 3.0;
+			};
+			name = Release;
+		};
+		5D8A63FF200657C600F48447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NXRRDMLHBY;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/msgpack-c/include";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WATCHOS_DEPLOYMENT_TARGET = 3.0;
+			};
+			name = Debug;
+		};
+		5D8A6400200657C600F48447 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NXRRDMLHBY;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/msgpack-c/include";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 3.0;
 			};
 			name = Release;
 		};
@@ -472,7 +679,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = NXRRDMLHBY;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -487,7 +694,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = NXRRDMLHBY;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -505,6 +712,24 @@
 			buildConfigurations = (
 				5D80D81E1FC32A4200FDA4AF /* Debug */,
 				5D80D81F1FC32A4200FDA4AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5D8A63EB2006569800F48447 /* Build configuration list for PBXNativeTarget "MessagePack watchOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5D8A63EC2006569800F48447 /* Debug */,
+				5D8A63ED2006569800F48447 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5D8A63FE200657C600F48447 /* Build configuration list for PBXNativeTarget "msgpack-c watchOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5D8A63FF200657C600F48447 /* Debug */,
+				5D8A6400200657C600F48447 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
