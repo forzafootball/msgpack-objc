@@ -237,7 +237,7 @@ NSDate *dateForDateExtension(msgpack_object object)
     struct timespec result;
     switch (object.via.ext.size) {
         case sizeof(uint32_t): {
-            uint32_t data32 = *object.via.ext.ptr;
+            uint32_t data32 = *(uint32_t *)object.via.ext.ptr;
             result.tv_nsec = 0;
             result.tv_sec = data32;
             break;
