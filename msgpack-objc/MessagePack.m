@@ -9,9 +9,10 @@
 #import "MessagePack.h"
 #import <msgpack.h>
 
-@interface MessagePackExtension()
+@interface TimestampExtension : MessagePackExtension
 
-- (instancetype)initWithType:(uint8_t)type bytes:(const void *)bytes length:(NSUInteger)length;
+- (instancetype)initWithDate:(NSDate *)date;
+- (NSDate *)date;
 
 @end
 
@@ -88,7 +89,8 @@ void packObject(id object, msgpack_packer *packer)
         msgpack_pack_bin(packer, data.length);
         msgpack_pack_bin_body(packer, data.bytes, data.length);
     } else if ([object isKindOfClass:[NSDate class]]) {
-        packNSDate(object, packer);
+        TimestampExtension *extension = [[TimestampExtension alloc] initWithDate:object];
+        packObject(extension, packer);
     } else if ([object isKindOfClass:[MessagePackExtension class]]) {
         MessagePackExtension *extension = (MessagePackExtension *)object;
         msgpack_pack_ext(packer, extension.data.length, extension.type);
@@ -178,11 +180,12 @@ id objectForMessagePackObject(msgpack_object object)
             return [[NSData alloc] initWithBytes:object.via.bin.ptr length:object.via.bin.size];
 
         case MSGPACK_OBJECT_EXT: {
-            // -1 is reserved for date objects, so we want to return an NSDate directly
-            if (object.via.ext.type == -1) {
-                return dateForDateExtension(object);
+            NSData *data = [NSData dataWithBytes:object.via.ext.ptr length:object.via.ext.size];
+            MessagePackExtension *extension = [MessagePackExtension extensionWithType:object.via.ext.type data:data];
+            if ([extension isKindOfClass:TimestampExtension.class]) {
+                return [(TimestampExtension *)extension date];
             }
-            return [[MessagePackExtension alloc] initWithType:object.via.ext.type bytes:object.via.ext.ptr length:object.via.ext.size];
+            return extension;
         }
 
         case MSGPACK_OBJECT_ARRAY: {
@@ -226,7 +229,7 @@ id objectForMessagePackObject(msgpack_object object)
     }
 }
 
-#pragma mark - Timestamp Extensions
+#pragma mark - Extensions
 #define ONE_BILLION 1000000000.0
 
 void reverseBytes(uint8_t *start, int size) {
@@ -238,98 +241,23 @@ void reverseBytes(uint8_t *start, int size) {
     }
 }
 
-void packNSDate(NSDate *date, msgpack_packer *packer)
-{
-    NSTimeInterval timeInterval = [date timeIntervalSince1970];
-    double integral = floor(timeInterval);
-    double fractional = timeInterval - integral;
-    struct timespec time = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
-    if ((time.tv_sec >> 34) == 0) {
-        uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
-        if ((data64 & 0xffffffff00000000L) == 0) {
-            // timestamp 32
-            uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
-            msgpack_pack_ext(packer, sizeof(data32), -1);
-            msgpack_pack_ext_body(packer, &data32, sizeof(data32));
-        } else {
-            // timestamp 64
-            uint64_t bigEndianData64 = CFSwapInt64HostToBig(data64);
-            msgpack_pack_ext(packer, sizeof(bigEndianData64), -1);
-            msgpack_pack_ext_body(packer, &bigEndianData64, sizeof(bigEndianData64));
-        }
-    } else {
-        // timestamp 96
-        msgpack_pack_ext(packer, 12, -1);
-        uint32_t nsec = (uint32_t)time.tv_nsec;
-        int64_t sec = (int64_t)time.tv_sec;
-
-        if (OSHostByteOrder() == OSLittleEndian) {
-            uint8_t bytes[12];
-            memcpy(&bytes[0], (int64_t *)&sec, sizeof(sec));
-            memcpy(&bytes[0] + sizeof(sec), (uint32_t *)&nsec, sizeof(nsec));
-            reverseBytes((uint8_t *)&bytes, sizeof(bytes));
-            msgpack_pack_ext_body(packer, &bytes, sizeof(bytes));
-        } else {
-            msgpack_pack_ext_body(packer, &nsec, sizeof(nsec));
-            msgpack_pack_ext_body(packer, &sec, sizeof(sec));
-        }
-    }
-}
-
-NSDate *dateForDateExtension(msgpack_object object)
-{
-    struct timespec result;
-    switch (object.via.ext.size) {
-        case sizeof(uint32_t): {
-            uint32_t data32 = CFSwapInt32BigToHost(*(uint32_t *)object.via.ext.ptr);
-            msgpack_object_print(stdout, object);
-            result.tv_nsec = 0;
-            result.tv_sec = data32;
-            break;
-        }
-        case sizeof(uint64_t): {
-            uint64_t data64 = CFSwapInt64BigToHost(*(uint64_t *)object.via.ext.ptr);
-            result.tv_nsec = data64 >> 34;
-            result.tv_sec = data64 & 0x00000003ffffffffL;
-            break;
-        }
-        case 12: {
-            if (OSHostByteOrder() == OSLittleEndian) {
-                uint8_t bytes[12];
-                memcpy(&bytes[0], object.via.ext.ptr, 12);
-                reverseBytes(&bytes[0], 12);
-                result.tv_sec = *(int64_t *)&bytes[0];
-                result.tv_nsec = *(uint32_t *)(&bytes[0] + sizeof(int64_t));
-            } else {
-                result.tv_nsec = *(uint32_t *)object.via.ext.ptr;
-                result.tv_sec = *(int64_t *)((object.via.ext.ptr) + sizeof(uint32_t));
-            }
-            break;
-        }
-        default:
-            [NSException raise:NSInternalInconsistencyException format:@"Encountered unsupported TimeStamp format in MessagePack-data. Size is %u bytes but supported sizes are 32, 64 or 96 bits.", object.via.ext.size];
-    }
-
-    NSTimeInterval interval = result.tv_sec + (result.tv_nsec / ONE_BILLION);
-    return [NSDate dateWithTimeIntervalSince1970:interval];
-}
-
 @end
 
 @implementation MessagePackExtension
 
-- (instancetype)initWithType:(uint8_t)type data:(NSData *)data
++ (instancetype)extensionWithType:(int8_t)type data:(NSData *)data
+{
+    Class extensionClass = type == -1 ? TimestampExtension.class : self;
+    return [[extensionClass alloc] initWithType:type data:data];
+}
+
+- (instancetype)initWithType:(int8_t)type data:(NSData *)data
 {
     if (self = [super init]) {
         _type = type;
         _data = data;
     }
     return self;
-}
-
-- (instancetype)initWithType:(uint8_t)type bytes:(const void *)bytes length:(NSUInteger)length
-{
-    return [self initWithType:type data:[NSData dataWithBytes:bytes length:length]];
 }
 
 - (BOOL)isEqual:(id)object
@@ -350,6 +278,84 @@ NSDate *dateForDateExtension(msgpack_object object)
 - (NSString *)description
 {
     return [NSString stringWithFormat:@"<%@> (type: %i, length: %lu)", NSStringFromClass(self.class), self.type, self.data.length];
+}
+
+@end
+
+@implementation TimestampExtension
+
+- (instancetype)initWithDate:(NSDate *)date
+{
+    NSTimeInterval timeInterval = [date timeIntervalSince1970];
+    double integral = floor(timeInterval);
+    double fractional = timeInterval - integral;
+    struct timespec time = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
+    NSData *data = nil;
+    if ((time.tv_sec >> 34) == 0) {
+        uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
+        if ((data64 & 0xffffffff00000000L) == 0) {
+            // timestamp 32
+            uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
+            data = [NSData dataWithBytes:&data32 length:sizeof(data32)];
+        } else {
+            // timestamp 64
+            uint64_t bigEndianData64 = CFSwapInt64HostToBig(data64);
+            data = [NSData dataWithBytes:&bigEndianData64 length:sizeof(bigEndianData64)];
+        }
+    } else {
+        // timestamp 96
+        uint32_t nsec = (uint32_t)time.tv_nsec;
+        int64_t sec = (int64_t)time.tv_sec;
+        uint8_t bytes[12];
+
+        if (OSHostByteOrder() == OSLittleEndian) {
+            memcpy(&bytes[0], (int64_t *)&sec, sizeof(sec));
+            memcpy(&bytes[0] + sizeof(sec), (uint32_t *)&nsec, sizeof(nsec));
+            reverseBytes((uint8_t *)&bytes, sizeof(bytes));
+        } else {
+            memcpy(&bytes[0], (uint32_t *)&nsec, sizeof(nsec));
+            memcpy(&bytes[0] + sizeof(nsec), (int64_t *)&sec, sizeof(sec));
+        }
+        data = [NSData dataWithBytes:&bytes[0] length:sizeof(bytes)];
+    }
+    return [self initWithType:-1 data:data];
+}
+
+- (NSDate *)date
+{
+    struct timespec result;
+    switch (self.data.length) {
+        case sizeof(uint32_t): {
+            uint32_t data32 = CFSwapInt32BigToHost(*(uint32_t *)self.data.bytes);
+            result.tv_nsec = 0;
+            result.tv_sec = data32;
+            break;
+        }
+        case sizeof(uint64_t): {
+            uint64_t data64 = CFSwapInt64BigToHost(*(uint64_t *)self.data.bytes);
+            result.tv_nsec = data64 >> 34;
+            result.tv_sec = data64 & 0x00000003ffffffffL;
+            break;
+        }
+        case 12: {
+            if (OSHostByteOrder() == OSLittleEndian) {
+                uint8_t bytes[12];
+                [self.data getBytes:&bytes[0] length:self.data.length];
+                reverseBytes(&bytes[0], 12);
+                result.tv_sec = *(int64_t *)&bytes[0];
+                result.tv_nsec = *(uint32_t *)(&bytes[0] + sizeof(int64_t));
+            } else {
+                result.tv_nsec = *(uint32_t *)self.data.bytes;
+                result.tv_sec = *(int64_t *)(self.data.bytes + sizeof(uint32_t));
+            }
+            break;
+        }
+        default:
+            [NSException raise:NSInternalInconsistencyException format:@"Encountered unsupported TimeStamp format in MessagePack-data. Size is %li bytes but supported sizes are 32, 64 or 96 bits.", self.data.length];
+    }
+
+    NSTimeInterval interval = result.tv_sec + (result.tv_nsec / ONE_BILLION);
+    return [NSDate dateWithTimeIntervalSince1970:interval];
 }
 
 @end

@@ -64,7 +64,7 @@
 - (void)testExtensionPacking {
     NSString *testString = @"A string with ovänliga karaktärer 🙈";
     NSData *testData = [testString dataUsingEncoding:NSUnicodeStringEncoding];
-    MessagePackExtension *extension = [[MessagePackExtension alloc] initWithType:14 bytes:testData.bytes length:testData.length];
+    MessagePackExtension *extension = [MessagePackExtension extensionWithType:14 data:testData];
     NSData *packed = [MessagePack packObject:extension];
     MessagePackExtension *unpacked = [MessagePack unpackData:packed];
     XCTAssertEqualObjects(extension, unpacked);
