@@ -8,7 +8,6 @@
 
 #import "MessagePack.h"
 #import <msgpack.h>
-#define ONE_BILLION 1000000000.0
 
 @interface MessagePackExtension()
 
@@ -18,15 +17,19 @@
 
 @implementation MessagePack
 
+#pragma mark - Public
+
 + (id)unpackData:(NSData *)data
 {
     msgpack_zone mempool;
     msgpack_zone_init(&mempool, 2048);
     msgpack_object deserialized;
-    msgpack_unpack(data.bytes, data.length, NULL, &mempool, &deserialized);
+    msgpack_unpack_return result = msgpack_unpack(data.bytes, data.length, NULL, &mempool, &deserialized);
     id object = nil;
-    @autoreleasepool {
-        object = objcObjectFromMsgPackObject(deserialized);
+    if (result == MSGPACK_UNPACK_SUCCESS) {
+        object = objectForMessagePackObject(deserialized);
+    } else {
+        [NSException raise:NSInternalInconsistencyException format:@"%@", [self errorDescriptionForResult:result]];
     }
     msgpack_zone_destroy(&mempool);
     return object;
@@ -38,23 +41,40 @@
     msgpack_packer packer;
     msgpack_sbuffer_init(&buffer);
     msgpack_packer_init(&packer, &buffer, msgpack_sbuffer_write);
-    packObjcObject(object, &packer);
+    packObject(object, &packer);
     NSData *data = [NSData dataWithBytes:buffer.data length:buffer.size];
     msgpack_sbuffer_destroy(&buffer);
     return data;
 }
 
-void packObjcObject(id object, msgpack_packer *packer) {
++ (NSString *)errorDescriptionForResult:(msgpack_unpack_return)result
+{
+    switch (result) {
+        case MSGPACK_UNPACK_PARSE_ERROR:
+            return @"Couldn't parse MessagePack-data.";
+        case MSGPACK_UNPACK_EXTRA_BYTES:
+            return @"MessagePack-data contains extra bytes.";
+        case MSGPACK_UNPACK_NOMEM_ERROR:
+            return @"Ran out of memory while parsing MessagePack-data";
+        default:
+            return nil;
+    }
+}
+
+#pragma mark - Packing
+
+void packObject(id object, msgpack_packer *packer)
+{
     if ([object isKindOfClass:[NSArray class]]) {
         msgpack_pack_array(packer, [(NSArray *)object count]);
         for (id child in object) {
-            packObjcObject(child, packer);
+            packObject(child, packer);
         }
     } else if ([object isKindOfClass:[NSDictionary class]]) {
         msgpack_pack_map(packer, [(NSDictionary *)object count]);
         [object enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
-            packObjcObject(key, packer);
-            packObjcObject(obj, packer);
+            packObject(key, packer);
+            packObject(obj, packer);
         }];
     } else if ([object isKindOfClass:[NSString class]]) {
         const char *UTF8String = [(NSString *)object UTF8String];
@@ -78,7 +98,8 @@ void packObjcObject(id object, msgpack_packer *packer) {
     }
 }
 
-void packNSNumber(NSNumber *number, msgpack_packer *packer) {
+void packNSNumber(NSNumber *number, msgpack_packer *packer)
+{
     // Booleans are singletons, so we can check for those explicitly
     if (number == (id)kCFBooleanTrue) {
         msgpack_pack_true(packer);
@@ -129,47 +150,9 @@ void packNSNumber(NSNumber *number, msgpack_packer *packer) {
 #undef pack_primitive_t
 }
 
-void packNSDate(NSDate *date, msgpack_packer *packer)
-{
-    NSTimeInterval timeInterval = [date timeIntervalSince1970];
-    double integral = floor(timeInterval);
-    double fractional = timeInterval - integral;
-    struct timespec time = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
-    if ((time.tv_sec >> 34) == 0) {
-        uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
-        if ((data64 & 0xffffffff00000000L) == 0) {
-            // timestamp 32
-            uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
-            msgpack_pack_ext(packer, sizeof(data32), -1);
-            msgpack_pack_ext_body(packer, &data32, sizeof(data32));
-        }
-        else {
-            // timestamp 64
-            uint64_t bigEndianData = CFSwapInt64HostToBig(data64);
-            msgpack_pack_ext(packer, sizeof(data64), -1);
-            msgpack_pack_ext_body(packer, &bigEndianData, sizeof(data64));
-        }
-    }
-    else {
-        // timestamp 96
-        msgpack_pack_ext(packer, 12, -1);
-        uint32_t nsec = (uint32_t)time.tv_nsec;
-        int64_t sec = (int64_t)time.tv_sec;
+#pragma mark - Unpacking
 
-        if (OSHostByteOrder() == OSLittleEndian) {
-            uint8_t bytes[12];
-            memcpy(&bytes[0], (int64_t *)&sec, sizeof(sec));
-            memcpy(&bytes[0] + sizeof(sec), (uint32_t *)&nsec, sizeof(nsec));
-            reverseBytes((uint8_t *)&bytes, 12);
-            msgpack_pack_ext_body(packer, &bytes, sizeof(bytes));
-        } else {
-            msgpack_pack_ext_body(packer, &nsec, sizeof(nsec));
-            msgpack_pack_ext_body(packer, &sec, sizeof(sec));
-        }
-    }
-}
-
-id objcObjectFromMsgPackObject(msgpack_object object)
+id objectForMessagePackObject(msgpack_object object)
 {
     switch (object.type) {
         case MSGPACK_OBJECT_NIL:
@@ -210,7 +193,7 @@ id objcObjectFromMsgPackObject(msgpack_object object)
 
             id objects[array_length];
             for (int i = 0; i < array_length; ++i) {
-                objects[i] = objcObjectFromMsgPackObject(object.via.array.ptr[i]);
+                objects[i] = objectForMessagePackObject(object.via.array.ptr[i]);
             }
             return [[NSArray alloc] initWithObjects:objects count:array_length];
         }
@@ -226,8 +209,8 @@ id objcObjectFromMsgPackObject(msgpack_object object)
             int array_index = 0;
             for (int i = 0; i < map_length; ++i) {
                 msgpack_object_kv *p = object.via.map.ptr + i;
-                id key = objcObjectFromMsgPackObject(p->key);
-                id value = objcObjectFromMsgPackObject(p->val);
+                id key = objectForMessagePackObject(p->key);
+                id value = objectForMessagePackObject(p->val);
                 if (key && value) {
                     keys[array_index] = key;
                     values[array_index] = value;
@@ -243,13 +226,53 @@ id objcObjectFromMsgPackObject(msgpack_object object)
     }
 }
 
+#pragma mark - Timestamp Extensions
+#define ONE_BILLION 1000000000.0
+
 void reverseBytes(uint8_t *start, int size) {
-    uint8_t *low = start;
-    uint8_t *high = start + size - 1;
-    while (low < high) {
-        uint8_t temp = *low;
-        *low++ = *high;
-        *high-- = temp;
+    uint8_t *end = start + size - 1;
+    while (start < end) {
+        uint8_t temp = *start;
+        *start++ = *end;
+        *end-- = temp;
+    }
+}
+
+void packNSDate(NSDate *date, msgpack_packer *packer)
+{
+    NSTimeInterval timeInterval = [date timeIntervalSince1970];
+    double integral = floor(timeInterval);
+    double fractional = timeInterval - integral;
+    struct timespec time = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
+    if ((time.tv_sec >> 34) == 0) {
+        uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
+        if ((data64 & 0xffffffff00000000L) == 0) {
+            // timestamp 32
+            uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
+            msgpack_pack_ext(packer, sizeof(data32), -1);
+            msgpack_pack_ext_body(packer, &data32, sizeof(data32));
+        } else {
+            // timestamp 64
+            uint64_t bigEndianData64 = CFSwapInt64HostToBig(data64);
+            msgpack_pack_ext(packer, sizeof(bigEndianData64), -1);
+            msgpack_pack_ext_body(packer, &bigEndianData64, sizeof(bigEndianData64));
+        }
+    } else {
+        // timestamp 96
+        msgpack_pack_ext(packer, 12, -1);
+        uint32_t nsec = (uint32_t)time.tv_nsec;
+        int64_t sec = (int64_t)time.tv_sec;
+
+        if (OSHostByteOrder() == OSLittleEndian) {
+            uint8_t bytes[12];
+            memcpy(&bytes[0], (int64_t *)&sec, sizeof(sec));
+            memcpy(&bytes[0] + sizeof(sec), (uint32_t *)&nsec, sizeof(nsec));
+            reverseBytes((uint8_t *)&bytes, sizeof(bytes));
+            msgpack_pack_ext_body(packer, &bytes, sizeof(bytes));
+        } else {
+            msgpack_pack_ext_body(packer, &nsec, sizeof(nsec));
+            msgpack_pack_ext_body(packer, &sec, sizeof(sec));
+        }
     }
 }
 
@@ -284,7 +307,7 @@ NSDate *dateForDateExtension(msgpack_object object)
             break;
         }
         default:
-            NSLog(@"Warning: Encountered unsupported Date format in message pack data. Size is %u bytes but supported sizes are 32, 64 or 96 bits.", object.via.ext.size);
+            [NSException raise:NSInternalInconsistencyException format:@"Encountered unsupported TimeStamp format in MessagePack-data. Size is %u bytes but supported sizes are 32, 64 or 96 bits.", object.via.ext.size];
     }
 
     NSTimeInterval interval = result.tv_sec + (result.tv_nsec / ONE_BILLION);
