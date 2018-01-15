@@ -72,27 +72,26 @@
 }
 
 - (void)testDatePacking {
-    NSDate *date32 = [NSDate dateWithTimeIntervalSince1970:1000000];
-    NSDate *date64 = [NSDate dateWithTimeIntervalSince1970:1500000.12345];
-    NSDate *date96 = [NSDate dateWithTimeIntervalSince1970:2147483647999.12345789];
-    NSDate *negativeDate = [NSDate dateWithTimeIntervalSince1970:-10000.5];
-    NSDate *distantPast = [NSDate distantFuture];
-    NSDate *distantFuture = [NSDate distantFuture];
-    NSDate *currentDate = [NSDate new];
+    NSArray *testDates = @[[NSDate dateWithTimeIntervalSince1970:1000000],             // 32-bit
+                           [NSDate dateWithTimeIntervalSince1970:1500000.12345],       // 64-bit
+                           [NSDate dateWithTimeIntervalSince1970:2147483647.1234578],  // 96-bit
+                           [NSDate dateWithTimeIntervalSince1970:-1.5],                // Negative dates are always 96-bit in MessagePack
+                           [NSDate dateWithTimeIntervalSince1970:-1.001],
+                           [NSDate dateWithTimeIntervalSince1970:-10000.999],
+                           [NSDate dateWithTimeIntervalSince1970:-0.0001],
+                           [NSDate dateWithTimeIntervalSince1970:-0.9999],
+                           [NSDate dateWithTimeIntervalSince1970:0.00001],
+                           [NSDate distantFuture],
+                           [NSDate distantFuture],
+                           [NSDate new]];
 
-    NSArray *dates = @[date32, date64, date96, negativeDate, distantPast, distantFuture, currentDate];
-    NSData *packed = [MessagePack packObject:dates];
-    NSArray *unpacked = [MessagePack unpackData:packed];
-    XCTAssertEqualObjects(unpacked[0], date32);
-    XCTAssertEqualObjects(unpacked[1], date64);
-    XCTAssertEqualObjects(unpacked[2], date96);
-    XCTAssertEqualObjects(unpacked[3], negativeDate);
-    XCTAssertEqualObjects(unpacked[4], distantPast);
-    XCTAssertEqualObjects(unpacked[5], distantFuture);
 
-    // We must check the time interval since 1970 on the current date, since that's what is serialized to MessagePack.
-    // Comparing with timeIntervalSinceReferenceDate can be false, and that seems to be what isEqual: does for NSDate
-    XCTAssertEqual([unpacked[6] timeIntervalSince1970], [currentDate timeIntervalSince1970]);
+    NSData *messagePackDates = [MessagePack packObject:testDates];
+    NSArray *unpackedDates = [MessagePack unpackData:messagePackDates];
+
+    for (int i = 0; i < testDates.count; ++i) {
+        XCTAssertEqual([testDates[i] timeIntervalSince1970], [unpackedDates[i] timeIntervalSince1970]);
+    }
 }
 
 @end

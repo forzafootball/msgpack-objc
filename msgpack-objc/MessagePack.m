@@ -132,20 +132,22 @@ void packNSNumber(NSNumber *number, msgpack_packer *packer) {
 void packNSDate(NSDate *date, msgpack_packer *packer)
 {
     NSTimeInterval timeInterval = [date timeIntervalSince1970];
-    struct timespec time = {.tv_sec = (long)floor(timeInterval)};
-    time.tv_nsec = (timeInterval - (double)time.tv_sec) * ONE_BILLION;
+    double integral = floor(timeInterval);
+    double fractional = timeInterval - integral;
+    struct timespec time = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
     if ((time.tv_sec >> 34) == 0) {
         uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
         if ((data64 & 0xffffffff00000000L) == 0) {
             // timestamp 32
-            uint32_t data32 = (uint32_t)data64;
+            uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
             msgpack_pack_ext(packer, sizeof(data32), -1);
             msgpack_pack_ext_body(packer, &data32, sizeof(data32));
         }
         else {
             // timestamp 64
+            uint64_t bigEndianData = CFSwapInt64HostToBig(data64);
             msgpack_pack_ext(packer, sizeof(data64), -1);
-            msgpack_pack_ext_body(packer, &data64, sizeof(data64));
+            msgpack_pack_ext_body(packer, &bigEndianData, sizeof(data64));
         }
     }
     else {
@@ -153,8 +155,17 @@ void packNSDate(NSDate *date, msgpack_packer *packer)
         msgpack_pack_ext(packer, 12, -1);
         uint32_t nsec = (uint32_t)time.tv_nsec;
         int64_t sec = (int64_t)time.tv_sec;
-        msgpack_pack_ext_body(packer, &nsec, sizeof(nsec));
-        msgpack_pack_ext_body(packer, &sec, sizeof(sec));
+
+        if (OSHostByteOrder() == OSLittleEndian) {
+            uint8_t bytes[12];
+            memcpy(&bytes[0], (int64_t *)&sec, sizeof(sec));
+            memcpy(&bytes[0] + sizeof(sec), (uint32_t *)&nsec, sizeof(nsec));
+            reverseBytes((uint8_t *)&bytes, 12);
+            msgpack_pack_ext_body(packer, &bytes, sizeof(bytes));
+        } else {
+            msgpack_pack_ext_body(packer, &nsec, sizeof(nsec));
+            msgpack_pack_ext_body(packer, &sec, sizeof(sec));
+        }
     }
 }
 
@@ -232,27 +243,44 @@ id objcObjectFromMsgPackObject(msgpack_object object)
     }
 }
 
+void reverseBytes(uint8_t *start, int size) {
+    uint8_t *low = start;
+    uint8_t *high = start + size - 1;
+    while (low < high) {
+        uint8_t temp = *low;
+        *low++ = *high;
+        *high-- = temp;
+    }
+}
+
 NSDate *dateForDateExtension(msgpack_object object)
 {
     struct timespec result;
     switch (object.via.ext.size) {
         case sizeof(uint32_t): {
-            uint32_t data32 = *(uint32_t *)object.via.ext.ptr;
+            uint32_t data32 = CFSwapInt32BigToHost(*(uint32_t *)object.via.ext.ptr);
+            msgpack_object_print(stdout, object);
             result.tv_nsec = 0;
             result.tv_sec = data32;
             break;
         }
         case sizeof(uint64_t): {
-            uint64_t data64 = *(uint64_t *)object.via.ext.ptr;
+            uint64_t data64 = CFSwapInt64BigToHost(*(uint64_t *)object.via.ext.ptr);
             result.tv_nsec = data64 >> 34;
             result.tv_sec = data64 & 0x00000003ffffffffL;
             break;
         }
         case 12: {
-            uint32_t data32 = *(uint32_t *)object.via.ext.ptr;
-            int64_t data64 = *(int64_t *)(object.via.ext.ptr + sizeof(uint32_t));
-            result.tv_nsec = data32;
-            result.tv_sec = data64;
+            if (OSHostByteOrder() == OSLittleEndian) {
+                uint8_t bytes[12];
+                memcpy(&bytes[0], object.via.ext.ptr, 12);
+                reverseBytes(&bytes[0], 12);
+                result.tv_sec = *(int64_t *)&bytes[0];
+                result.tv_nsec = *(uint32_t *)(&bytes[0] + sizeof(int64_t));
+            } else {
+                result.tv_nsec = *(uint32_t *)object.via.ext.ptr;
+                result.tv_sec = *(int64_t *)((object.via.ext.ptr) + sizeof(uint32_t));
+            }
             break;
         }
         default:
