@@ -22,6 +22,8 @@
 		5D8A6404200657E200F48447 /* libmsgpack-c watchOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D8A6401200657C600F48447 /* libmsgpack-c watchOS.a */; };
 		5D8A640720065CE500F48447 /* MessagePack.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5D9B3AD51FA780F2009FC29A /* MessagePack.h */; };
 		5D8A640820065D1300F48447 /* MessagePack.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5D9B3AD51FA780F2009FC29A /* MessagePack.h */; };
+		5DA10485200E47010006428F /* msgpack.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5DA10483200E46E60006428F /* msgpack.h */; };
+		5DA10486200E490C0006428F /* msgpack.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5DA10483200E46E60006428F /* msgpack.h */; };
 		5DEA75E71FC2EBE300EA2B36 /* MessagePackTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DE76E061FB0987200C60CDF /* MessagePackTests.m */; };
 		5DEA75E81FC2EBE900EA2B36 /* testdata.json in Resources */ = {isa = PBXBuildFile; fileRef = 5DE76E231FB0999B00C60CDF /* testdata.json */; };
 		5DEA75E91FC2EBED00EA2B36 /* testdata.msgpack in Resources */ = {isa = PBXBuildFile; fileRef = 5DE76E221FB0999A00C60CDF /* testdata.msgpack */; };
@@ -53,6 +55,7 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
+				5DA10486200E490C0006428F /* msgpack.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,6 +65,7 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
+				5DA10485200E47010006428F /* msgpack.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +101,7 @@
 		5D8A63EE2006569800F48447 /* libMessagePack.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMessagePack.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		5D8A6401200657C600F48447 /* libmsgpack-c watchOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libmsgpack-c watchOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5D9B3AD51FA780F2009FC29A /* MessagePack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessagePack.h; sourceTree = "<group>"; };
+		5DA10483200E46E60006428F /* msgpack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = msgpack.h; path = "msgpack-c/include/msgpack.h"; sourceTree = "<group>"; };
 		5DC13D221FA8870200D93126 /* MessagePack.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MessagePack.m; sourceTree = "<group>"; };
 		5DE76E061FB0987200C60CDF /* MessagePackTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MessagePackTests.m; sourceTree = "<group>"; };
 		5DE76E221FB0999A00C60CDF /* testdata.msgpack */ = {isa = PBXFileReference; lastKnownFileType = file; path = testdata.msgpack; sourceTree = "<group>"; };
@@ -159,6 +164,7 @@
 		5D80D80B1FC329FE00FDA4AF /* msgpack-c */ = {
 			isa = PBXGroup;
 			children = (
+				5DA10483200E46E60006428F /* msgpack.h */,
 				5D80D8291FC32B1700FDA4AF /* objectc.c */,
 				5D80D82A1FC32B1700FDA4AF /* unpack.c */,
 				5D80D82C1FC32B1700FDA4AF /* version.c */,

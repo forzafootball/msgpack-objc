@@ -7,7 +7,7 @@
 //
 
 #import "MessagePack.h"
-#import <msgpack.h>
+#import <msgpack-c/msgpack.h>
 
 @interface TimestampExtension : MessagePackExtension
 
