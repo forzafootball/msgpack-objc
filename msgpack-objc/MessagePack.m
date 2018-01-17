@@ -277,7 +277,7 @@ void reverseBytes(uint8_t *start, int size) {
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"<%@> (type: %i, length: %lu)", NSStringFromClass(self.class), self.type, self.data.length];
+    return [NSString stringWithFormat:@"<%@> (type: %i, length: %lu)", NSStringFromClass(self.class), self.type, (unsigned long)self.data.length];
 }
 
 @end
@@ -289,10 +289,11 @@ void reverseBytes(uint8_t *start, int size) {
     NSTimeInterval timeInterval = [date timeIntervalSince1970];
     double integral = floor(timeInterval);
     double fractional = timeInterval - integral;
-    struct timespec time = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
+    long long seconds = integral;
+    unsigned long long nanoseconds = fractional * ONE_BILLION;
     NSData *data = nil;
-    if ((time.tv_sec >> 34) == 0) {
-        uint64_t data64 = (time.tv_nsec << 34) | time.tv_sec;
+    if ((seconds >> 34) == 0) {
+        uint64_t data64 = (nanoseconds << 34) | seconds;
         if ((data64 & 0xffffffff00000000L) == 0) {
             // timestamp 32
             uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
@@ -304,8 +305,8 @@ void reverseBytes(uint8_t *start, int size) {
         }
     } else {
         // timestamp 96
-        uint32_t nsec = (uint32_t)time.tv_nsec;
-        int64_t sec = (int64_t)time.tv_sec;
+        uint32_t nsec = (uint32_t)nanoseconds;
+        int64_t sec = (int64_t)seconds;
         uint8_t bytes[12];
 
         if (OSHostByteOrder() == OSLittleEndian) {
@@ -323,18 +324,20 @@ void reverseBytes(uint8_t *start, int size) {
 
 - (NSDate *)date
 {
-    struct timespec result;
+    long long seconds;
+    unsigned long long nanoseconds;
+
     switch (self.data.length) {
         case sizeof(uint32_t): {
             uint32_t data32 = CFSwapInt32BigToHost(*(uint32_t *)self.data.bytes);
-            result.tv_nsec = 0;
-            result.tv_sec = data32;
+            nanoseconds = 0;
+            seconds = data32;
             break;
         }
         case sizeof(uint64_t): {
             uint64_t data64 = CFSwapInt64BigToHost(*(uint64_t *)self.data.bytes);
-            result.tv_nsec = data64 >> 34;
-            result.tv_sec = data64 & 0x00000003ffffffffL;
+            nanoseconds = data64 >> 34;
+            seconds = data64 & 0x00000003ffffffffL;
             break;
         }
         case 12: {
@@ -342,19 +345,19 @@ void reverseBytes(uint8_t *start, int size) {
                 uint8_t bytes[12];
                 [self.data getBytes:&bytes[0] length:self.data.length];
                 reverseBytes(&bytes[0], 12);
-                result.tv_sec = *(int64_t *)&bytes[0];
-                result.tv_nsec = *(uint32_t *)(&bytes[0] + sizeof(int64_t));
+                seconds = *(int64_t *)&bytes[0];
+                nanoseconds = *(uint32_t *)(&bytes[0] + sizeof(int64_t));
             } else {
-                result.tv_nsec = *(uint32_t *)self.data.bytes;
-                result.tv_sec = *(int64_t *)(self.data.bytes + sizeof(uint32_t));
+                nanoseconds = *(uint32_t *)self.data.bytes;
+                seconds = *(int64_t *)(self.data.bytes + sizeof(uint32_t));
             }
             break;
         }
         default:
-            [NSException raise:NSInternalInconsistencyException format:@"Encountered unsupported TimeStamp format in MessagePack-data. Size is %li bytes but supported sizes are 32, 64 or 96 bits.", self.data.length];
+            [NSException raise:NSInternalInconsistencyException format:@"Encountered unsupported TimeStamp format in MessagePack-data. Size is %li bytes but supported sizes are 32, 64 or 96 bits.", (unsigned long)self.data.length];
     }
 
-    NSTimeInterval interval = result.tv_sec + (result.tv_nsec / ONE_BILLION);
+    NSTimeInterval interval = seconds + (nanoseconds / ONE_BILLION);
     return [NSDate dateWithTimeIntervalSince1970:interval];
 }
 
