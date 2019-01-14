@@ -9,6 +9,81 @@
 #import <XCTest/XCTest.h>
 #import "MessagePack.h"
 
+#pragma mark - MessagePackSerializable object
+
+@interface Person : NSObject <NSSecureCoding, MessagePackSerializable>
+
+@property (nonatomic, strong) NSString *firstName;
+@property (nonatomic, strong) NSString *secondName;
+
+@end
+
+@implementation Person
+
+- (instancetype)initWithMessagePackData:(NSData *)data extensionType:(int8_t)type
+{
+    return [NSKeyedUnarchiver unarchiveObjectWithData:data];
+}
+
+- (NSData *)messagePackData
+{
+    return [NSKeyedArchiver archivedDataWithRootObject:self];
+}
+
+- (instancetype)initWithFirstName:(NSString *)firstName andSecondName:(NSString *)secondName
+{
+    self = [super init];
+    if (self) {
+        self.firstName = firstName;
+        self.secondName = secondName;
+    }
+    return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
+{
+    if (self = [super init]) {
+        self.firstName = [aDecoder decodeObjectOfClass:[NSString class] forKey:NSStringFromSelector(@selector(firstName))];
+        self.secondName = [aDecoder decodeObjectOfClass:[NSString class] forKey:NSStringFromSelector(@selector(secondName))];
+    }
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)aCoder
+{
+    [aCoder encodeObject:self.firstName forKey:NSStringFromSelector(@selector(firstName))];
+    [aCoder encodeObject:self.secondName forKey:NSStringFromSelector(@selector(secondName))];
+}
+
++ (BOOL)supportsSecureCoding
+{
+    return YES;
+}
+
+- (BOOL)isEqual:(id)object
+{
+    if (object == self) {
+        return YES;
+    }
+    
+    if (![object isKindOfClass:[self class]]) {
+        return NO;
+    }
+    
+    Person *person = (Person *)object;
+    return [self.firstName isEqual:person.firstName]
+    && [self.secondName isEqual:person.secondName];
+}
+
+- (NSUInteger)hash
+{
+    return [self.firstName hash] ^ [self.secondName hash];
+}
+
+@end
+
+#pragma mark - Unit tests
+
 @interface MessagePackTests : XCTestCase
 
 @end
@@ -61,14 +136,12 @@
     XCTAssertEqualObjects(dictionary, unpacked);
 }
 
-- (void)testExtensionPacking {
-    NSString *testString = @"A string with ovänliga karaktärer 🙈";
-    NSData *testData = [testString dataUsingEncoding:NSUnicodeStringEncoding];
-    MessagePackExtension *extension = [MessagePackExtension extensionWithType:14 data:testData];
-    NSData *packed = [MessagePack packObject:extension];
-    MessagePackExtension *unpacked = [MessagePack unpackData:packed];
-    XCTAssertEqualObjects(extension, unpacked);
-    XCTAssertEqualObjects(testString, [[NSString alloc] initWithData:unpacked.data encoding:NSUnicodeStringEncoding]);
+- (void)testExtension {
+    Person *person = [[Person alloc] initWithFirstName:@"John" andSecondName:@"Doe"];
+    [MessagePack registerClass:Person.class forExtensionType:14];
+    NSData *packedData = [MessagePack packObject:person];
+    id unpackedObject = [MessagePack unpackData:packedData];
+    XCTAssertEqualObjects(person, unpackedObject);
 }
 
 - (void)testDatePacking {
