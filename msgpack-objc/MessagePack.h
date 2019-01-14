@@ -8,18 +8,25 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol MessagePackSerializable
+
+@required
+- (instancetype)initWithMessagePackData:(NSData *)data extensionType:(int8_t)type;
+
+@optional
+- (NSData *)messagePackData;
+
+@end
+
+@interface NSDate (TimestampSerializable) <MessagePackSerializable>
+
+@end
+
 @interface MessagePack : NSObject
 
 + (id)unpackData:(NSData *)data;
 + (NSData *)packObject:(id)object;
 
-@end
-
-@interface MessagePackExtension : NSObject
-
-+ (instancetype)extensionWithType:(int8_t)type data:(NSData *)data;
-
-@property (nonatomic, readonly) int8_t type;
-@property (nonatomic, readonly) NSData *data;
++ (void)registerClass:(Class)class forExtensionType:(int8_t)extensionType;
 
 @end
