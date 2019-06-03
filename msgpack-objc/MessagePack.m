@@ -7,12 +7,7 @@
 //
 
 #import "MessagePack.h"
-#if COCOAPODS
-// Since CocoaPods 1.7.0, it converts dashes to underscores in module names
-#import <msgpack_c/msgpack.h>
-#else
 #import <msgpack-c/msgpack.h>
-#endif
 
 @implementation MessagePack
 
