@@ -77,6 +77,8 @@ static NSDictionary<NSNumber *, Class> *_extensions;
 
 #pragma mark - Packing
 
+#define ONE_BILLION 1000000000.0
+
 void packObject(id object, msgpack_packer *packer)
 {
     if ([object isKindOfClass:[NSArray class]]) {
@@ -101,8 +103,14 @@ void packObject(id object, msgpack_packer *packer)
         NSData *data = (NSData *)object;
         msgpack_pack_bin(packer, data.length);
         msgpack_pack_bin_body(packer, data.bytes, data.length);
+    } else if ([object isKindOfClass:[NSDate class]]) {
+        NSTimeInterval timeInterval = [(NSDate *)object timeIntervalSince1970];
+        double integral = floor(timeInterval);
+        double fractional = timeInterval - integral;
+        msgpack_timestamp timestamp = {.tv_sec = integral, .tv_nsec = fractional * ONE_BILLION};
+        msgpack_pack_timestamp(packer, &timestamp);
     } else {
-        // Try to find a registered extension that supports unpacking of this object
+        // Try to find a registered extension that supports packing of this object
         __block BOOL extensionFound;
         [_extensions enumerateKeysAndObjectsUsingBlock:^(NSNumber *key, Class class, BOOL *stop) {
             if ([object isKindOfClass:class] && [object respondsToSelector:@selector(messagePackData)]) {
@@ -203,6 +211,15 @@ id objectForMessagePackObject(msgpack_object object)
 
         case MSGPACK_OBJECT_EXT: {
             int8_t type = object.via.ext.type;
+
+            // Timestamp
+            if (type == -1) {
+                msgpack_timestamp ts;
+                msgpack_object_to_timestamp(&object, &ts);
+                NSTimeInterval interval = ts.tv_sec + (ts.tv_nsec / ONE_BILLION);
+                return [[NSDate alloc] initWithTimeIntervalSince1970:interval];
+            }
+
             Class class = _extensions[@(type)];
             if (class) {
                 NSData *data = [NSData dataWithBytes:object.via.ext.ptr length:object.via.ext.size];
@@ -249,103 +266,6 @@ id objectForMessagePackObject(msgpack_object object)
             NSLog(@"Warning: Ecountered unexpected type when unpacking msgpack-object");
             return nil;
     }
-}
-
-#pragma mark - Extensions
-#define ONE_BILLION 1000000000.0
-
-void reverseBytes(uint8_t *start, int size) {
-    uint8_t *end = start + size - 1;
-    while (start < end) {
-        uint8_t temp = *start;
-        *start++ = *end;
-        *end-- = temp;
-    }
-}
-
-@end
-
-@implementation NSDate (TimestampSerializable)
-
-- (instancetype)initWithMessagePackData:(NSData *)data extensionType:(int8_t)type
-{
-    if (type != -1) {
-        return nil;
-    }
-    
-    long long seconds;
-    unsigned long long nanoseconds;
-    
-    switch (data.length) {
-        case sizeof(uint32_t): {
-            uint32_t data32 = CFSwapInt32BigToHost(*(uint32_t *)data.bytes);
-            nanoseconds = 0;
-            seconds = data32;
-            break;
-        }
-        case sizeof(uint64_t): {
-            uint64_t data64 = CFSwapInt64BigToHost(*(uint64_t *)data.bytes);
-            nanoseconds = data64 >> 34;
-            seconds = data64 & 0x00000003ffffffffL;
-            break;
-        }
-        case 12: {
-            if (OSHostByteOrder() == OSLittleEndian) {
-                uint8_t bytes[12];
-                [data getBytes:&bytes[0] length:data.length];
-                reverseBytes(&bytes[0], 12);
-                seconds = *(int64_t *)&bytes[0];
-                nanoseconds = *(uint32_t *)(&bytes[0] + sizeof(int64_t));
-            } else {
-                nanoseconds = *(uint32_t *)data.bytes;
-                seconds = *(int64_t *)(data.bytes + sizeof(uint32_t));
-            }
-            break;
-        }
-        default:
-            [NSException raise:NSInternalInconsistencyException format:@"Encountered unsupported TimeStamp format in MessagePack data. Size is %li bytes but supported sizes are 32, 64 or 96 bits.", (unsigned long)data.length];
-    }
-    
-    NSTimeInterval interval = seconds + (nanoseconds / ONE_BILLION);
-    return [self initWithTimeIntervalSince1970:interval];
-}
-
-- (NSData *)messagePackData
-{
-    NSTimeInterval timeInterval = [self timeIntervalSince1970];
-    double integral = floor(timeInterval);
-    double fractional = timeInterval - integral;
-    long long seconds = integral;
-    unsigned long long nanoseconds = fractional * ONE_BILLION;
-    NSData *data = nil;
-    if ((seconds >> 34) == 0) {
-        uint64_t data64 = (nanoseconds << 34) | seconds;
-        if ((data64 & 0xffffffff00000000L) == 0) {
-            // timestamp 32
-            uint32_t data32 = CFSwapInt32HostToBig((uint32_t)data64);
-            data = [NSData dataWithBytes:&data32 length:sizeof(data32)];
-        } else {
-            // timestamp 64
-            uint64_t bigEndianData64 = CFSwapInt64HostToBig(data64);
-            data = [NSData dataWithBytes:&bigEndianData64 length:sizeof(bigEndianData64)];
-        }
-    } else {
-        // timestamp 96
-        uint32_t nsec = (uint32_t)nanoseconds;
-        int64_t sec = (int64_t)seconds;
-        uint8_t bytes[12];
-        
-        if (OSHostByteOrder() == OSLittleEndian) {
-            memcpy(&bytes[0], (int64_t *)&sec, sizeof(sec));
-            memcpy(&bytes[0] + sizeof(sec), (uint32_t *)&nsec, sizeof(nsec));
-            reverseBytes((uint8_t *)&bytes, sizeof(bytes));
-        } else {
-            memcpy(&bytes[0], (uint32_t *)&nsec, sizeof(nsec));
-            memcpy(&bytes[0] + sizeof(nsec), (int64_t *)&sec, sizeof(sec));
-        }
-        data = [NSData dataWithBytes:&bytes[0] length:sizeof(bytes)];
-    }
-    return data;
 }
 
 @end
