@@ -22,12 +22,12 @@
 
 - (instancetype)initWithMessagePackData:(NSData *)data extensionType:(int8_t)type
 {
-    return [NSKeyedUnarchiver unarchiveObjectWithData:data];
+    return [NSKeyedUnarchiver unarchivedObjectOfClass:[Person class] fromData:data error:nil];
 }
 
 - (NSData *)messagePackData
 {
-    return [NSKeyedArchiver archivedDataWithRootObject:self];
+    return [NSKeyedArchiver archivedDataWithRootObject:self requiringSecureCoding:YES error:nil];
 }
 
 - (instancetype)initWithFirstName:(NSString *)firstName andSecondName:(NSString *)secondName
